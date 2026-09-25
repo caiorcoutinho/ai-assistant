@@ -4,6 +4,8 @@ import psycopg
 from fastapi import FastAPI
 from qdrant_client import QdrantClient
 
+from app.ws import router as ws_router
+
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://app:app@postgres:5432/app")
 QDRANT_URL = os.getenv("QDRANT_URL", "http://qdrant:6333")
 
@@ -14,6 +16,9 @@ app = FastAPI(title="AI Assistant API", root_path="/api")
 @app.get("/")
 def root():
     return {"service": "ai-assistant-backend", "status": "ok"}
+
+
+app.include_router(ws_router)
 
 
 @app.get("/health")
