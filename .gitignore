@@ -1,0 +1,19 @@
+# Env
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node / React
+node_modules/
+dist/
+.vite/
+*.log
+
+# Editores / SO
+.DS_Store
+.idea/
+.vscode/
