@@ -1,3 +1,4 @@
+import asyncio
 import json
 import uuid
 
@@ -9,6 +10,7 @@ from app.agent.agent import checkpointer, get_agent
 router = APIRouter()
 
 TOOL_RESULT_MAX_CHARS = 1000
+IDLE_TIMEOUT_SECONDS = 60
 
 
 def _text(content) -> str:
@@ -84,13 +86,21 @@ async def chat(websocket: WebSocket):
       {"type": "tool_result", "name", "content"}  resultado da tool (truncado)
       {"type": "done"}                            fim da resposta
       {"type": "error", "message": "..."}         falha na rodada (a conexão continua aberta)
+
+    Sem mensagem do cliente por IDLE_TIMEOUT_SECONDS (fora de uma rodada do agente),
+    o servidor fecha a conexão com código 1000.
     """
     await websocket.accept()
     thread_id = str(uuid.uuid4())  # uma conversa por conexão
 
     try:
         while True:
-            text = _parse_message(await websocket.receive_text())
+            try:
+                raw = await asyncio.wait_for(websocket.receive_text(), IDLE_TIMEOUT_SECONDS)
+            except asyncio.TimeoutError:
+                await websocket.close(code=1000, reason="inatividade")
+                return
+            text = _parse_message(raw)
             if not text:
                 continue
             try:
